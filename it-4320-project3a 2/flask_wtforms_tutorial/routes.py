@@ -3,7 +3,10 @@ from flask import redirect, render_template, url_for, request, flash
 
 from .forms import StockForm
 from .charts import *
-
+#import pandas as pd
+#import alpha_vantage
+import time
+#from alpha_vantage.timeseries import TimeSeries 
 
 @app.route("/", methods=['GET', 'POST'])
 @app.route("/stocks", methods=['GET', 'POST'])
@@ -28,13 +31,16 @@ def stocks():
                 err = None
                  
                 #THIS IS WHERE YOU WILL CALL THE METHODS FROM THE CHARTS.PY FILE AND IMPLEMENT YOUR CODE
-            
+                
+                #charts.stockQuery()
                 
                 
+                
+
                 
                 
                 #This chart variable is what is passed to the stock.html page to render the chart returned from the api
-                chart = "ASSIGN CHART TO THIS VARIABLE"
+                chart = getData(symbol, time_series, chart_type, start_date, end_date)
 
             return render_template("stock.html", form=form, template="form-template", err = err, chart = chart)
     

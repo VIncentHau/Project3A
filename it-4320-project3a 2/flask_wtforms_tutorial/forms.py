@@ -12,15 +12,36 @@ from datetime import date
 from wtforms.fields.html5 import DateField
 from wtforms.validators import URL, DataRequired, Email, EqualTo, Length
 
+
+
 class StockForm(FlaskForm):
     """Generate Your Graph."""
     
     #THIS IS WHERE YOU WILL IMPLEMENT CODE TO POPULATE THE SYMBOL FIELD WITH STOCK OPTIONS
+    #using the alphavantage api ---if doesn't work, use a json or a csv file--
+
+    stockList_file = '/project/flask_wtforms_tutorial/nasdaqlisted.txt'
+    #
+
+    stockList= open(stockList_file)
+
+
+    
+
+    # print processed tabular data (if exists any)
+    count = 0
+    stock_choices = []
+    for data in stockList:
+        count +=1
+        if count > 1:
+            savedData = data.split("|")
+            stock_choices.append(tuple((savedData[0], savedData[0])))
+
+
+        
+
     symbol = SelectField("Choose Stock Symbol",[DataRequired()],
-        choices=[
-            ("IBM", "IBM"),
-            ("GOOGL", "GOOGL"),
-        ],
+        choices=stock_choices,
     )
 
     chart_type = SelectField("Select Chart Type",[DataRequired()],
@@ -42,6 +63,3 @@ class StockForm(FlaskForm):
     start_date = DateField("Enter Start Date")
     end_date = DateField("Enter End Date")
     submit = SubmitField("Submit")
-
-
-

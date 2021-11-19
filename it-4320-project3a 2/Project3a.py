@@ -1,128 +1,229 @@
-import requests, pygal, lxml
-import numpy
-import alpha_vantage
-import time
-from alpha_vantage.timeseries import TimeSeries 
-import pandas as pd
+#REQUIREMENTS
+#1. Ask the user to enter the stock symbol for the company they want data for.
+#2. Ask the user for the chart type they would like.
+#3. Ask the user for the time series function they want the api to use.
+#4. Ask the user for the beginning date in YYYY-MM-DD format.
+#5. Ask the user for the end date in YYYY-MM-DD format.
+    # - The end date should not be before the begin date
+#6. Generate a graph and open in the user’s default browser.
 
-API_URL = "https://www.alphavantage.co/query"
-API_KEY = "2NQHP2M8OUMWHY8F"
+from datetime import datetime
+import requests
+import pygal
+import json
 
-def getData(symbol, timeSeries, chartType, startDate, endDate):
+print('Stock Data Visualizer')
+print('-------------------------')
 
-    ts = TimeSeries(key=API_KEY, output_format='pandas')
-    if timeSeries == '1':
-        data, meta_data = ts.get_intraday(symbol=symbol, interval='60min', outputsize='full')
-        f = 'H'
-    if timeSeries == '2':
-        data, meta_data = ts.get_daily(symbol=symbol, outputsize='compact')
-        f = 'D'
-    if timeSeries == '3':
-        data, meta_data = ts.get_weekly(symbol=symbol)
-        f = 'W'
-    if timeSeries == '4':
-        data, meta_data = ts.get_monthly(symbol=symbol)
-        f = 'M'
+#2. Ask the user for the chart type they would like.
+def askCharts():
+    print('\nChart Types:')
+    print('------------------')
+    print('1. Bar')
+    print('2. Line') 
 
-    data_date_changed = data[endDate:startDate]
-
-    if chartType == "1":
-        line_chart = pygal.Bar(x_label_rotation=20, width=1000, height = 400)
-        line_chart.title = 'Stock Data for {}:  {} to {}'.format(symbol, startDate, endDate)
-        labels = data_date_changed.index.to_list()
-        line_chart.x_labels= reversed(labels)
-        line_chart.add("Open", data_date_changed['1. open'])
-        line_chart.add("High", data_date_changed['2. high'])
-        line_chart.add("Low", data_date_changed['3. low'])
-        line_chart.add("Close", data_date_changed['4. close'])
-        line_chart.render_in_browser()
-
-    if chartType == "2":
-        line_chart = pygal.Line(x_label_rotation=20, width=1000, height = 400)
-        line_chart.title = 'Stock Data for {}: {} to {}'.format(symbol, startDate, endDate)
-        labels = data_date_changed.index.to_list()
-        line_chart.x_labels= reversed(labels)
-        line_chart.add("Open", data_date_changed['1. open'])
-        line_chart.add("High", data_date_changed['2. high'])
-        line_chart.add("Low", data_date_changed['3. low'])
-        line_chart.add("Close", data_date_changed['4. close'])
-        line_chart.render_in_browser()
-
-#Error checking for date input
-def dCheck(startDate, endDate):
-    #Error checking to make sure format is correct
-    try:
-        #Makes user's entered dates in to readable values
-        sDate = time.mktime(time.strptime(startDate, "%Y-%m-%d"))
-        eDate = time.mktime(time.strptime(endDate, "%Y-%m-%d"))
-        #Checks if end date given is before current date
-        if(eDate > time.time()):
-            print("\nERROR: End date can not be after the current date.")
-            return False
-        #Checks if start date given is before the given end date
-        if(sDate < eDate):
-            return True
+    while(True):
+        try:
+            chartType = int(input('\nEnter the chart type you want(1, 2): '))
+            if chartType == 1:
+                print('chartType == 1:')
+            elif chartType == 2:
+                print('chartType == 2:')
+            elif chartType not in range(1,3): #if user any number other than 1-3
+                print("ERROR: Invalid Option! Select 1 or 2")
+                continue
+        except ValueError: #if user anything other than 1-3
+            print("ERROR: Invalid Option! Select 1 or 2")
+            continue
         else:
-            print("\nERROR: Start date must be before the end date.")
-            return False
-    except:
-        print("\nERROR: One, or both, of the given dates are not acceptable, try again.")
-        return False
+            break
+    return chartType
+    
 
-def main():
-
-    #Acceptable options for the chart types and time series inputs
-    chartOptions = ("1", "2")
-    seriesOptions = ("1", "2", "3", "4")
+#3. Ask the user for the time series function they want the api to use.
+def askTimeSeries(stockSymbol):
+    stock = stockSymbol
+    print('\nSelect the Time Series of the chart you want to generate:')
+    print('----------------------------------------------------------------')
+    print('1. Intraday')
+    print('2. Daily')
+    print('3. Weekly')
+    print('4. Monthly')
     
     while(True):
         try:
-            
-            print("Stock Data Visualizer")
-            print("-------------------------")
-            symbol = input("Enter the stock symbol you are looking for: ")
-
-            #Repeats prompt if user input is not correct
-            while(True):
-                print("\nChart Type:")
-                print("-------------------------")
-                print("1. Bar\n2. Line\n")
-                chartType = input("Enter the chart type you want (1,2): ")
-                #Checks user input with list of options
-                if (chartType in chartOptions):
-                    break
-                print("\nERROR: Input not acceptable, try again.")
-
-            #Repeats prompt if user input is not accepted
-            while(True):
-                print("\nSelect the time series of the chart you want to generate")
-                print("-------------------------------------------------------------")
-                print("1.Intrady\n2. Daily\n3. Weekly\n4. Monthly")
-                timeSeries = input("Enter time series option (1,2,3,4): ")
-                #Checks user input with list of options
-                if (timeSeries in seriesOptions):
-                    break
-                print("\nERROR: Input not acceptable, try again.")
-
-            #Repeats both date entry promts if user input is not correct
-            while(True):
-                startDate = input("\nEnter the start date (YYYY-MM-DD): ")
-                endDate = input("\nEnter the end date (YYYY-MM-DD): ")
-                #Send dates to be checked
-                if(dCheck(startDate, endDate)):
-                    break
-            
-            getData(symbol, timeSeries, chartType, startDate, endDate)
-
-        #Moved except clause so its code is executed before the prompted to end the loop
-        except Exception as err:
-            print("\nERROR: ", err.__class__)
-
-        again = input("\nWould you like to view more stock data? Press 'y' to continue: ")
-        print(" ")
-        if (again.lower() != "y"):
+            timeSeries = int(input('\nEnter  time series option (1, 2, 3, 4): '))
+            apiKey = 'YY5C93IGQ19VMJXQ'
+            if timeSeries == 1:
+                #enter intraday request
+                url = 'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=' + stock + '&interval=60min&apikey=' + apiKey
+            elif timeSeries == 2:
+                #enter daily request
+                url = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=' + stock + '&apikey=' + apiKey
+            elif timeSeries == 3:
+                #enter weekly request
+                url = 'https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY&symbol=' + stock + '&apikey=' + apiKey
+            elif timeSeries == 4:
+                #enter monthly requred
+                url = 'https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY&symbol=' + stock + '&apikey=' + apiKey
+            elif timeSeries not in range(1,5): #if user anything other than 1-4
+                print("ERROR: Invalid Option! Select 1 or 2 or 3 or 4")
+                continue
+        except ValueError: #if user anything other than 1-4
+            print("ERROR: Invalid Option! Select 1 or 2 or 3 or 4")
+            continue
+        else:
             break
+    r = requests.get(url)
+    data = r.json()
+    return data, timeSeries
+    
 
+
+#4. Ask the user for the beginning date in YYYY-MM-DD format.
+#5. Ask the user for the end date in YYYY-MM-DD format.
+    # The end date should not be before the begin date
+# https://www.geeksforgeeks.org/comparing-dates-python/
+# https://www.geeksforgeeks.org/python-validate-string-date-format/
+def checkDates():
+    format = "%Y-%m-%d"
+    while(True):
+        try:
+            startDate = input('\nEnter the start date (format: YYYY-MM-DD): ')
+            endDate = input('\nEnter the end date (format: YYYY-MM-DD): ')
+            datetime.strptime(startDate, format)
+            datetime.strptime(endDate, format)
+            if endDate < startDate:
+                print("End date must be after start date")
+                continue
+            break
+        except ValueError as e:
+            print("Incorrect start date format, should be YYYY-MM-DD")
+            continue
+        else:
+            break
+    return startDate, endDate
+
+#7. Generate a graph and open in the user’s default browser.
+def generateGraph(stockSymbol, chartType, timeSeries, data, startDate, endDate):
+    
+    format2 = "%Y-%m-%d %H:%M:%S"
+    format = "%Y-%m-%d"
+    high = []
+    low =[]
+    close =[]
+    open = []
+    dateList = []
+    stock = stockSymbol
+    chart = chartType
+    timeS = timeSeries
+    sd = startDate
+    ed = endDate
+    datetime.strptime(sd, format)
+    datetime.strptime(ed, format)
+    dataList = data
+    
+
+    
+    if timeS == 1:
+        for date in dataList['Time Series (60min)']:
+            datetime.strptime(date, format2)
+            if date > ed:
+                continue 
+            if date <= sd:
+                break
+            dateList.append(date)
+            open.append(dataList['Time Series (60min)'][date]['1. open'])
+            high.append(dataList['Time Series (60min)'][date]['2. high'])
+            low.append(dataList['Time Series (60min)'][date]['3. low'])
+            close.append(dataList['Time Series (60min)'][date]['4. close'])
+
+    if timeS == 2:
+        for date in dataList['Time Series (Daily)']:
+            datetime.strptime(date, format)
+            if date > ed:
+                continue 
+            if date <= sd:
+                break
+            dateList.append(date)
+            open.append(dataList['Time Series (Daily)'][date]['1. open'])
+            high.append(dataList['Time Series (Daily)'][date]['2. high'])
+            low.append(dataList['Time Series (Daily)'][date]['3. low'])
+            close.append(dataList['Time Series (Daily)'][date]['4. close'])
+
+    if timeS == 3:
+        for date in dataList['Weekly Time Series']:
+            datetime.strptime(date, format)
+            if date > ed:
+                continue 
+            if date <= sd:
+                break
+            dateList.append(date)
+            open.append(dataList['Weekly Time Series'][date]['1. open'])
+            high.append(dataList['Weekly Time Series'][date]['2. high'])
+            low.append(dataList['Weekly Time Series'][date]['3. low'])
+            close.append(dataList['Weekly Time Series'][date]['4. close'])
             
+    if timeS == 4:
+        for date in dataList['Monthly Time Series']:
+            datetime.strptime(date, format)
+            if date > ed:
+                continue 
+            if date <= sd:
+                break
+            dateList.append(date)
+            open.append(dataList['Monthly Time Series'][date]['1. open'])
+            high.append(dataList['Monthly Time Series'][date]['2. high'])
+            low.append(dataList['Monthly Time Series'][date]['3. low'])
+            close.append(dataList['Monthly Time Series'][date]['4. close'])
 
+    openFloat = [float(item) for item in open]
+    highFloat = [float(item) for item in high]
+    lowFloat = [float(item) for item in low]
+    closeFloat = [float(item) for item in close]
+
+    if chart == 1:
+        bar = pygal.Bar(x_label_rotation=90)
+        bar.title = stock
+        bar.x_labels = map(str, dateList)
+        bar.add('Open', openFloat)
+        bar.add('High', highFloat)
+        bar.add('Low', lowFloat)
+        bar.add('Close', closeFloat)
+        bar.render_in_browser()
+
+    if chart == 2:
+        line = pygal.Line(x_label_rotation=90)
+        line.title = stock
+        line.x_labels = map(str, dateList)
+        line.add('Open', openFloat)
+        line.add('High', highFloat)
+        line.add('Low', lowFloat)
+        line.add('Close', closeFloat)
+        line.render_in_browser()
+
+    
+    
+
+
+def main():
+    repeat = True
+    while(repeat):
+        while(True):
+            try:
+                #1. Ask the user to enter the stock symbol for the company they want data for.
+                stockSymbol = input('\nEnter stock symbol: ')
+                chartType = askCharts()
+                data, timeSeries = askTimeSeries(stockSymbol)
+                startDate, endDate = checkDates()
+                generateGraph(stockSymbol, chartType, timeSeries, data, startDate, endDate)
+            except ValueError:
+                print("ERROR: Invalid Option!")
+                continue
+            else:
+                 break
+        more_stocks = input("Would you like to view more stock data? (y/n): ")
+        if (more_stocks != "y"):
+            repeat = False
+        
 main()
